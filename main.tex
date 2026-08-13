@@ -1,0 +1,192 @@
+ \documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% -----------------------------------------------------
+% bvraghav-tiet-ucs503p-article.sty
+% -----------------------------------------------------
+
+% Variable: Lab Instructor
+\makeatletter \newcommand{\BvrSetLabInstructor}[1]{%
+  \gdef\Bvr@LabInstructor{#1}}
+% default
+\newcommand{\Bvr@LabInstructor}{Dr. Paramveer Kaur Sidhu}
+% public accessor
+\newcommand{\BvrLabInstructorValue}{\Bvr@LabInstructor}
+\makeatother
+
+% Add subtitle
+\usepackage{titling}
+% -- Set title bold
+\pretitle{\begin{center}\bfseries\fontsize{18bp}{18bp}\selectfont}
+\makeatletter
+\newcommand{\BvrSubtitle}[1]{%
+  \posttitle{%
+    \par\end{center}
+    \begin{center}\large#1\end{center}
+    \vskip 0.5em}%
+}
+\makeatother
+
+% Hints in the section title(s)
+\newcommand{\BvrHint}[1]{%
+  {\normalfont\normalsize\itshape\hfill #1}}
+
+% -----------------------------------------------------
+
+\title{PrudenceMoney: Spend Prudently}
+
+\BvrSetLabInstructor{Ms. Paramveer Sidhu}
+
+\BvrSubtitle{%
+  Project Proposal for UCS503P  \\
+  Submitted to: \BvrLabInstructorValue \\ \bfseries
+  Thapar Institute of Engineering and Technology% 
+}
+
+\author{
+  Ayush Jain, CSED%
+  \thanks{Roll No: \texttt{1024030151}, 
+    Email: \texttt{ajain8\_be24\@thapar.edu}}
+  \and 
+  Tanmay Gupta, CSED%
+  \thanks{Roll No: \texttt{1024030162}, 
+    Email: \texttt{tgupta\_be24\@thapar.edu}}
+  \and
+  Kevin Thomas Mathew, CSED%
+  \thanks{Roll No: \texttt{1024030153}, 
+    Email: \texttt{kmathew\_be24\@thapar.edu}}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Higher-order goal%
+}
+This project focuses on developing a smart finance tracking application that simplifies expense management across multiple payment methods, including UPI, bank transactions, receipts, bills, and informal payments. The application aims to reduce the effort involved in manually recording expenses while providing meaningful spending analytics to help users better understand and manage their finances.
+
+\section{Time-to-value %
+}
+The on-boarding process is minimal and to the point, taking the user to their desired results efficiently.
+
+
+\section{Problem Statement}
+We highlight the following \textbf{issues} to be solved:
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Manual efforts are cumbersome:} proper analysis demands time-consuming effort, something most avoid, leading to rough and unreliable estimates.
+    \item \textbf{Lack of Self-accountablilty:} people overlook trivial spendings habits, preventing much needed reality-checks before its too late.
+    \item \textbf{Diversity in payment modes:} from informal accounts to formal billed payments, UPI and cash transfers , logging becomes overwhelming and gaining useful insights becomes tedious.
+    \item \textbf{Special Relevance in today's time:} due to the ease of online shopping, friction to spend has dropped, leading to a surge in daily payments
+\end{itemize}
+
+
+\section{Proposed Solution %
+}
+Our means to solving the above mentioned issues:
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Minimizing User Effort:} We use Optical Character Recognition (OCR) for quick data fetching from bills/receipts. App tracks recurrent payments without user intervention and offers smart expense-categorization with optional user input.
+    \item \textbf{Holding the user accountable:} App provides self-set limits/reminders, keeping one on track, potentially helping avoid excess spending. Helps one learn about their spending behavior, highlighting changes if necessary.
+    \item \textbf{Tackling Multiple Payment Scenarios:} Makes logging robust to diversity in transfer mediums, through methods like OCR and SMS-integration.
+\end{itemize}
+
+
+
+
+\section{Solution Approach %
+}
+The primary features of our application include : 
+\subsection{Optical Character Recognition for scanning Receipts %
+}
+OCR will have the following functionality:
+\begin{itemize}[leftmargin=0.7cm]
+    \item Extracts data in the following order of relevance : 1.Total Price 2.Category  3.Date and Time 4.Shop/Business Name    5.Location (if available)
+    \item Will use an LLM for semantics inference i.e. understanding what each part of extracted text contributes too.
+    \item If the LLM identifies any new/unseen name, it will propose a relevant category suggestion to the user 
+\end{itemize}
+
+\subsection{Automated Payments %
+}
+Feature is provided where user can set up automated record creation for recurrent payments such as rent, loans, EMI and a section dedicated to subscriptions.
+
+
+\subsection{Analytics Page %
+}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Access to a variety of graphical formats: bar graphs, pie charts etc.
+    \item For bar graphs : prefer long term timelines (weekly, monthly)
+    \item Default display : the current day's category-wise expense distribution (user can modify time units)
+\end{itemize}
+
+\subsection{Categorization %
+}
+\begin{itemize}[leftmargin=0.7cm]
+    \item For UPI based payments : new UPI IDs require manual category entry, however, this gets automated overtime through the data learned.
+    \item For OCR based payments : using LLMs for semantic understanding of data extracted via OCR.
+\end{itemize}
+
+
+\subsection{Application architecture %
+}
+Our architecture :
+\begin{itemize}[leftmargin=0.7cm]
+    \item \textbf{Frontend:} React Native for user and analytics dashboards in Android and iOS.
+    \item \textbf{Backend :} FastAPI driven user login/authetication, pwd storage, data encryption, AI model interaction.
+    \item \textbf{Database:} PostgreSQL backed storage of payment records, analytics, UPI ID mappings, profile data.
+    \item \textbf{Intermediate:} Kotlin for App-Android OS connectivity
+\end{itemize}
+
+\subsection{CI/CD}
+\begin{itemize}[leftmargin=0.7cm]
+    \item All newly integrated features will be subject to rigorous testing.
+    \item Bugs encountered by users will be handled promptly to the best of our abilities.
+\end{itemize}
+
+\section{Evaluation Criterion %
+}
+For our problem, the following metrics are of importance:
+\begin{itemize}[leftmargin=0.7cm]
+    \item Categorization evaluation : Use ratio of user-corrected edits vs predictions made by LLM to evaluate categorization performance.
+    \item OCR Evaluation : will ask the user to verify whether extracted text matches the actual bill details. This will be done only once a day to minimize user inconvenience and will be used as a metric over all extractions noted.
+\end{itemize}
+
+
+\section{Scalability %
+}
+\begin{itemize}[leftmargin=0.7cm]
+    \item For the initial user volume, free tiers of cloud hardware will suffice.
+    \item (Theoretical) As the user base increases, concurrency will increase leading to the requirement of increased raw computing resources. For this we intend to shift to premium cloud services.
+    \item (Theoretical) Caching of most frequent UPI merchants + hibernation of infrequent ones.
+\end{itemize}
+
+
+
+\section{Future Scope of Project %
+}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Adding support for non-english languages.
+    \item A fully integrated AI assistant that can automate tasks and handle general user queries.
+    \item Providing speech to text options in place of manually typing a record, as per convenience.
+    \item Speeding up search via location-based smart look-ups. For this we need location permissions, only while using the app and with user permission.
+    \item Use occupation type to sort preferences, such as subscriptions ordering, search results etc.
+    \item Shifting from React Native to platform dependent frameworks for better integration of the app.
+    \item Finding a work-around for SMS access on iOS devices (currently iOS restricts non-OTP message access)
+\end{itemize}
+
+
+
+\section{Risks and mitigations}
+\begin{itemize}[leftmargin=0.7cm]
+    \item OCR-scanned images will be deleted after text extraction and not stored in the database.
+    \item Only absolutely necessary data and data for enhanced user experience (instant location) is stored with explicit user consent.
+    \item SMS-processing is done locally on Android OS, with only filtered financial SMSs being sent to the app. Irrelevant details are discarded prior to reaching the database.
+\end{itemize}
+
+
+\section{Summary}
+This project aims to smartly organize finances, minimizing the time and effort required to record expenses and covers diverse payment scenarios ranging from UPI, Bank Transactions, Receipts/Bills and other informal transactions. Additionally, it provides analytics based on user spending habits.
+\end{document}

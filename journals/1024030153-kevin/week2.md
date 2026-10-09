@@ -15,6 +15,6 @@
 
 
 
-![Real World Receipt](./../../bill_1.jpg)
+![Real World Receipt](./../../image_data/Inference_Imgs_OCR/bill_1.jpg)
 
 

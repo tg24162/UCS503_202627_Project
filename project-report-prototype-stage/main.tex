@@ -1,0 +1,583 @@
+\documentclass{tietreport}
+
+% Import images
+\usepackage{graphicx}
+
+
+
+% Bibliography configuration
+\usepackage[
+  date=year,
+  style=numeric,
+  backend=biber,
+  sorting=nty,
+  maxnames=5,
+  minnames=3,
+  maxalphanames=4,
+  minalphanames=3,
+  backref=true,
+  doi=false,
+  isbn=false,
+  url=false,
+  eprint=false
+]{biblatex}
+\usepackage{hyperref}
+\addbibresource{references.bib}
+
+%% ==================================================
+%% CUSTOMIZE THESE FIELDS FOR YOUR PROJECT
+%% ==================================================
+
+% Course/Lab header
+\TitlePageHeader{%
+  UCS503 - Software Engineering%
+}
+
+% Main project title
+\ProjectTitle{%
+  Prudence Money%
+}
+
+% Subtitle or project description
+\ProjectSubTitle{%
+  Spend Prudently%
+}
+
+% Student information (up to 4 students)
+\author{%
+  \texttt{1024030151} Ayush Jain \\
+  \texttt{1024030153} Kevin Thomas Mathew \\
+  \texttt{1024030162} Tanmay Gupta%
+}
+
+% Group number, degree, year, program
+\TitlePageSubText{%
+  Group: \texttt{3C16} BE Third Year, CSE%
+}
+
+% Faculty advisor/guide name
+\AdvisorName{%
+  Ms Paramveer Sidhu%
+}
+
+% Evaluation period and department info
+\TitlePageFooterText{{%
+    \large Mid-Semester Evaluation \\[0.2cm]
+    \bfseries Computer Science and Engineering
+    Department%
+  } \\[0.15cm]
+  Thapar Institute of Engineering and Technology,
+  Patiala%
+}
+
+%% ==================================================
+
+\begin{document}
+
+% Generate title page
+\maketitle
+
+% Table of contents (auto-generated from chapters)
+\tableofcontents
+
+% ===== CHAPTER 1: INTRODUCTION =====
+
+\chapter{Introduction}
+
+\section{Background and Context}
+PrudenceMoney is a smart finance-tracking application designed to simplify expense management across UPI, bank transactions, receipts, bills, and informal payments. It reduces manual effort through OCR, automated recurring payment tracking, and smart expense categorization. The application also provides spending analytics to help users understand their financial habits and manage their expenses effectively.
+
+\subsection{Problem Statement}
+\begin{itemize}
+    \item \textbf{Manual Effort:} Recording and analyzing expenses manually is time-consuming and often inaccurate.
+
+    \item \textbf{Lack of Accountability:} Users may overlook small, frequent expenses, leading to poor spending habits.
+
+    \item \textbf{Multiple Payment Modes:} Tracking cash, UPI, bank transfers, and billed payments in one place is difficult.
+
+    \item \textbf{Increased Spending:} Convenient online shopping has reduced spending friction, increasing the frequency of daily transactions.
+\end{itemize}
+
+
+\section{Project Objectives}
+
+\begin{enumerate}
+  \item \textbf{Objective 1:} Setting a foundation for the OCR pipeline with an enforced image acquisition process. This ensures that images taken by the user satisfy certain minimum criteria such as illumination, blur absence and sufficient spatial coverage.
+  \item \textbf{Objective 2:} Build a User Dashboard for manual entry of transactions and to view their past history
+\end{enumerate}
+
+
+
+% ===== CHAPTER 2: METHODOLOGY & DESIGN =====
+
+\chapter{Methodology and Design}
+
+\section{System Architecture}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/HLD.jpeg}
+    \caption{Architecture}
+    \label{fig:my_image}
+\end{figure}
+
+\subsection{High-Level Design}
+\begin{itemize}
+    \item \textbf{User Authentication:} Implemented login and sign-up functionality through a temporary Streamlit dashboard, allowing users to access the application and register their accounts.
+
+    \item \textbf{Manual Transaction Entry:} Enabled users to manually record financial transactions, providing an alternative for logging expenses when automated extraction is unavailable.
+
+    \item \textbf{OCR-Based Transaction Recording:} Integrated Optical Character Recognition (OCR) to extract relevant transaction details from uploaded receipts and bills, reducing the need for manual data entry.
+
+    \item \textbf{Transaction Details Display:} Developed a dashboard to display recorded transactions and OCR-extracted information in an organized format, allowing users to review their financial records conveniently.
+
+    \item \textbf{Unified Dashboard:} Combined authentication, transaction recording, and expense viewing into a single interface to demonstrate the application's core functionality and provide a foundation for future frontend development.
+\end{itemize}
+
+\subsection{Technical Stack}
+
+\begin{itemize}
+  \item \textbf{Framework/Language:} Python, ReactNative, Kotlin
+  \item \textbf{Database:} PostgreSQL
+  \item \textbf{Tools:} Ultralytics in-built tools, Custom Python functions
+  \item \textbf{Libraries:} OpenCV, PaddleOCR, Ultralytics
+\end{itemize}
+
+\section{Implementation Details}
+
+\subsection{Module 1: Core Functionality}
+
+\subsubsection{OCR Foundation : Image Acquisition and Extraction}
+\textbf{Goal:} Establishing a pre-defined process to ensure that photos taken by the user satisfy a set of certain minimum criteria which ensure a smoother and more accurate extraction process afterwards. Each of these criteria currently focused upon are as follows:
+
+\begin{itemize}
+
+  \item \textbf{Receipt Detection:} Our first priority is to ensure that the current camera view contains a receipt. For this we have used a light weight object detection model, namely \textit{yolo26s}(around 20MB weights), with transfer learning on a dataset \cite{receiptdata} specific to receipt detection. 
+  Transfer Learning Details are as follows:
+  \begin{itemize}
+      \item \textit{Total Images : } 3731
+      \item \textit{Precision : } 0.994
+      \item \textit{Recall : } 0.983
+      \item \textit{mAP50 : } 0.992
+  \end{itemize}
+
+   \item \textbf{Receipt Coverage:} To ensure that the bill is sufficiently big we set a minimum coverage of \textbf{45}\% for the bill's \textit{bounding box}, with respect to the image, to ensure that users dont take far fetched images causing the OCR to get a very low resolution input.\\
+   \textbf{Current Coverage Threshold : } Minimum 45\%
+
+    \item \textbf{Receipt Blur:} This metric measures the existence of motion blur and low resolution text. Even the best OCR model will perform poorly with motion blur. To measure this metric we use variance of the \textit{Laplacian} map of the image. \\
+    Initially we curated a custom dataset of 50 text images, with a 50-50 split of blur vs clear. By calculating the laplacian variance of each image and plotting them we got a rough idea of a threshold.\\
+    This threshold when implemented seemed to be quite excessive, hence further fine-tuning was done, using a phone's live feed under various blur conditions. This threshold was more appropriate.\\
+    \textbf{Current Blur Threshold : } Minimum 400
+
+    \item \textbf{Receipt Illumination:} It is also necessary to ensure that user's doesnt use too dark or bright conditions that may cause undesired artifacts for the OCR model. 
+    To measure this, we divide the bill's bounding box into 8 equal sections, the mean intensity of each section (in grayscale) is measured and the mean of those 8 means is our final metric.
+    Please note that the current limits for this metric are \textbf{likely} to change in the future. \\ 
+    \textbf{Current Illumination Threshold : } Range 115 - 243
+    
+\end{itemize}
+
+
+
+\subsection{Module 2: Secondary Features}
+\begin{itemize}
+    \item \textbf{Transaction Dashboard:} Developed a temporary dashboard using Streamlit to provide a centralized interface for viewing and managing financial transactions.
+
+    \item \textbf{Transaction History:} Enabled users to view previously recorded transactions along with their relevant details, making it easier to review past expenses.
+
+    \item \textbf{Adding New Transactions:} Provided functionality to add new transactions manually or extract transaction details from uploaded receipts and bills using OCR.
+
+    \item \textbf{Transaction Overview:} Displayed transaction information in an organized format, allowing users to conveniently review their financial records and monitor recorded expenses.
+\end{itemize}
+
+
+% ===== CHAPTER 3: RESULTS & EVALUATION =====
+
+\chapter{Results and Evaluation}
+
+\section{Testing Methodology}
+
+\subsubsection{Testing the OCR Pipeline}
+\begin{itemize}
+    \item \textbf{Receipt Detection : } For this we tested on a validation set, part of the large scale receipt detection dataset used for training. The results are displayed later.
+    \item \textbf{Integration Testing : } After completing the \textit{Acquisition Process} we integrated PaddleOCR with the extracted bill patch, the generated JSON file is saved to a set directory.
+    \item \textbf{Threshold testing :} This is fundamental to our pipeline, hence for testing this we used simple real-world environments under a variety of lighting conditions with commercial bills.\\
+    \textbf{Blur : } Tested under White and a combination of White and Yellow lights. Within each lighting category we tested for thresholds at two ranges of spatial coverage namely : Range 1 (45\%-55\%) and Range 2 (55\% +). After testing the blur values in these 4 cases we settled for a final threshold.\\
+    \textbf{Illumination : } Used three lighting conditions : Dark, Medium (shadow in background) and Bright (direct light impact). These were based on visual cues. As mentioned prior, limits obtained here are prone to change due to the need for more robustness.\\
+    The \textbf{Coverage} and \textbf{Blur} thresholds seem to be accurate.
+    \item \textbf{Performance Testing : } For OCR, our primary metric of performance is two fold : inference speed and detection accuracy.
+    From the samples we have used to fine tuning thresholds, PaddleOCR's average confidence was always 0.9\%+, however, to get a more overall estimate, for the sake of completeness, we wish to test this on a real receipt OCR dataset in the near future. 
+      
+\end{itemize}
+
+
+
+\section{Final Validation Results}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|}
+  \hline
+  \textbf{Metric} & \textbf{Result} \\
+  \hline
+  Training Epochs & 8 \\
+  \hline
+  Training Duration & 1.32 hours \\
+  \hline
+  Total Validation Images & 3731 \\
+  \hline
+  Precision & 0.994 \\
+  \hline
+  Recall & 0.983 \\
+  \hline
+  mAP@50 & 0.992 \\
+  \hline
+  mAP@50--95 & 0.961 \\
+  \hline
+  Preprocessing Time & 0.2 ms/image \\
+  \hline
+  Inference Time & 3.7 ms/image \\
+  \hline
+  Loss Calculation Time & 0.0 ms/image \\
+  \hline
+  Postprocessing Time & 1.2 ms/image \\
+  \hline
+\end{tabular}
+\caption{Final validation performance of the fine-tuned YOLO model}
+\label{tab:validation-results}
+\end{table}
+
+
+
+% \section{Performance Metrics}
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{|l|r|r|}
+%   \hline
+%   \textbf{Metric} & \textbf{Target} &
+%   \textbf{Comment} \\
+%   \hline
+%   Response Time & $< 100$ms & $85$ms \\
+%   \hline
+%       Accuracy & $> 95\%$ & $97.2\%$ \\
+%   \hline
+%   Throughput & $1000$ req/s & $1250$ req/s \\
+%   \hline
+% \end{tabular}
+% \caption{Performance Results Summary}
+% \label{tab:performance}
+% \end{table}
+
+
+
+\section{Analysis}
+Analyze your results:
+\begin{itemize}
+  \item We have met the objective of setting a foundational \textbf{OCR} pipeline
+  \item A \textbf{User Dashboard} for manual entry is set up
+  \item In terms of expectations, we feel the OCR extraction process have better results than expected, this taught us an important lesson about model selection (switch from EasyOCR to PaddleOCR)
+  \item One of our current challenges is simulating the significantly large possibilities of lighting conditions that one can encounter in real life. This explains why some of our thresholds (eg Illumination) are still possibly inaccurate
+  \item Rigorous testing in varying environments, which we intend to do more of, is the main means of tackling the above.
+\end{itemize}
+
+% ===== CHAPTER 4: CONCLUSION =====
+
+\chapter{Conclusion}
+
+\section{Summary of Work}
+\begin{itemize}
+    \item We have set up an enforced image acquisition pipeline for OCR involving receipt detection and condition checking, this is dollowed by patch extraction using the receipt's detected bounding box which we then pass through our OCR model.
+    \item The model internally performs orientation correction and unwarping prior to OCR, the final extracted text is stored as a JSON file.
+    \item A User Dashboard has been set up for manual user entry in difficult scenarios
+\end{itemize}
+
+
+
+\section{Key Findings}
+
+\begin{itemize}
+  \item \textbf{Finding 1:} Learned that much more testing is needed to simulate the vast variety of lighting conditions and receipt types
+  \item \textbf{Finding 2:} Need to dedicate more time and effort to developing the User Interface , given the learning curve involved
+  \item \textbf{Finding 3:} Estimating thresholds for an appropriate OCR setup was much harder than expected and is to be worked upon more
+\end{itemize}
+
+\section{Future Work and Recommendations}
+
+Discuss how others could extend or improve
+your work:
+
+\begin{enumerate}
+  \item Currently patch extraction is automatic, this will be made user-controlled later on
+  \item Currently we have only tested for single bill environments, after finding appropriate lighting thresholds, will move on to multi-bill setups
+  \item The metric for illumination was learned to be ineffective in certain lighting conditions (uneven distribution), hence we consider integrating concepts such as \textit{variance} to this metric,
+  \item Current prototype does not integrate OCR with user's dashboard in the same manner as intended final product, that will be a top priority
+  \item As mentioned prior, we need to test our OCR model on large scale data to give a value to its performance, something not done yet due to confidence in its inference capability and focus on other areas.
+  \item After this we move onto SMS integration for Android Users
+  \item Finally we will focus on integrating the frontend, backend and OCR into a uniform system with user analytics
+\end{enumerate}
+
+
+\section{Final Remarks}
+We learned the need for more emphasis on all round integration in addition to more environmental testing to make our product robust to any user. In addition , the value of initially selecting a correct model has been highlighted.\\
+Keeping the above in mind, we move on to further advancements.
+
+% ===== BIBLIOGRAPHY =====
+
+% Print bibliography with heading in TOC
+\printbibliography[heading=bibintoc]
+
+
+\end{document}
+\documentclass{tietreport}
+
+% Import images
+\usepackage{graphicx}
+
+% Bibliography configuration
+\usepackage[
+  date=year,
+  style=alphabetic,
+  backend=biber,
+  sorting=nty,
+  maxnames=5,
+  minnames=3,
+  maxalphanames=4,
+  minalphanames=3,
+  backref=true,
+  doi=false,
+  isbn=false,
+  url=false,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}
+
+%% ==================================================
+%% CUSTOMIZE THESE FIELDS FOR YOUR PROJECT
+%% ==================================================
+
+% Course/Lab header
+\TitlePageHeader{%
+  Your Course Code - Course Title%
+}
+
+% Main project title
+\ProjectTitle{%
+  Your Project Title Here%
+}
+
+% Subtitle or project description
+\ProjectSubTitle{%
+  A Descriptive Subtitle for Your Work%
+}
+
+% Student information (up to 4 students)
+\author{%
+  \texttt{102XXXXXXX} Student Name One \\
+  \texttt{102XXXXXXX} Student Name Two \\
+  \texttt{102XXXXXXX} Student Name Three \\
+  \texttt{102XXXXXXX} Student Name Four%
+}
+
+% Group number, degree, year, program
+\TitlePageSubText{%
+  Group: \texttt{XXXX} BE Third Year, CSE%
+}
+
+% Faculty advisor/guide name
+\AdvisorName{%
+  Dr. Faculty Member Name%
+}
+
+% Evaluation period and department info
+\TitlePageFooterText{{%
+    \large Mid-Semester Evaluation \\[0.2cm]
+    \bfseries Computer Science and Engineering
+    Department%
+  } \\[0.15cm]
+  Thapar Institute of Engineering and Technology,
+  Patiala%
+}
+
+%% ==================================================
+
+\begin{document}
+
+% Generate title page
+\maketitle
+
+% Table of contents (auto-generated from chapters)
+\tableofcontents
+
+% ===== CHAPTER 1: INTRODUCTION =====
+
+\chapter{Introduction}
+
+\section{Background and Context}
+
+Begin your introduction here. Provide context
+for your project and explain why it matters.
+This section should clearly establish the
+problem or opportunity your project addresses.
+
+\subsection{Problem Statement}
+
+Define the specific problem your project
+tackles. Be precise and provide relevant
+background information that helps readers
+understand the scope and significance.
+
+\section{Project Objectives}
+
+\begin{enumerate}
+  \item \textbf{Objective 1:} State your first
+    specific, measurable objective.
+  \item \textbf{Objective 2:} State your second
+    objective.
+  \item \textbf{Objective 3:} State your third
+    objective.
+\end{enumerate}
+
+Document your SMART objectives (Specific,
+Measurable, Achievable, Relevant, Time-bound)
+clearly for your evaluators.
+
+% ===== CHAPTER 2: METHODOLOGY & DESIGN =====
+
+\chapter{Methodology and Design}
+
+\section{System Architecture}
+
+Describe your overall system design. You can
+reference figures and tables in your document:
+
+\subsection{High-Level Design}
+
+Explain the major components and how they
+interact. This section demonstrates your
+understanding of the problem and your
+solution approach.
+
+\subsection{Technical Stack}
+
+\begin{itemize}
+  \item \textbf{Framework/Language:} List your
+    primary technologies.
+  \item \textbf{Database:} Specify database
+    systems if applicable.
+  \item \textbf{Tools:} List development and
+    testing tools used.
+  \item \textbf{Libraries:} Note key libraries
+    or frameworks.
+\end{itemize}
+
+\section{Implementation Details}
+
+\subsection{Module 1: Core Functionality}
+
+Describe the implementation of your first
+major module. Include technical details about
+algorithms, data structures, or design
+patterns used.
+
+\subsection{Module 2: Secondary Features}
+
+Continue documenting your implementation
+by module, demonstrating the complexity and
+depth of your work.
+
+% ===== CHAPTER 3: RESULTS & EVALUATION =====
+
+\chapter{Results and Evaluation}
+
+\section{Testing Methodology}
+
+Describe your testing strategy:
+
+\begin{itemize}
+  \item \textbf{Unit Testing:} How you tested
+    individual components.
+  \item \textbf{Integration Testing:} How you
+    verified components work together.
+  \item \textbf{Performance Testing:} How you
+    measured system performance.
+  \item \textbf{User Testing:} If applicable,
+    how users evaluated your system.
+\end{itemize}
+
+\section{Performance Metrics}
+
+Present your results clearly with tables and
+figures. For example:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|r|}
+  \hline
+  \textbf{Metric} & \textbf{Target} &
+  \textbf{Achieved} \\
+  \hline
+  Response Time & $< 100$ms & $85$ms \\
+  \hline
+  Accuracy & $> 95\%$ & $97.2\%$ \\
+  \hline
+  Throughput & $1000$ req/s & $1250$ req/s \\
+  \hline
+\end{tabular}
+\caption{Performance Results Summary}
+\label{tab:performance}
+\end{table}
+
+\section{Analysis}
+
+Analyze your results:
+
+\begin{itemize}
+  \item Did you meet your objectives?
+  \item Where did you exceed expectations?
+  \item What challenges did you encounter?
+  \item How did you resolve them?
+\end{itemize}
+
+% ===== CHAPTER 4: CONCLUSION =====
+
+\chapter{Conclusion}
+
+\section{Summary of Work}
+
+Summarize what you accomplished. Remind
+readers of your objectives and explain which
+ones you met.
+
+\section{Key Findings}
+
+\begin{itemize}
+  \item \textbf{Finding 1:} State a significant
+    result or insight from your work.
+  \item \textbf{Finding 2:} Describe another
+    important discovery.
+  \item \textbf{Finding 3:} Highlight any
+    unexpected results.
+\end{itemize}
+
+\section{Future Work and Recommendations}
+
+Discuss how others could extend or improve
+your work:
+
+\begin{enumerate}
+  \item Potential enhancements to your system~\cite{latex2e}
+  \item Alternative approaches worth exploring
+  \item Scalability improvements
+  \item Integration with other systems
+  \item Real-world deployment considerations
+\end{enumerate}
+
+\section{Final Remarks}
+
+Conclude with reflections on what you learned
+and the impact of your work.
+
+% ===== BIBLIOGRAPHY =====
+
+% Print bibliography with heading in TOC
+\printbibliography[heading=bibintoc]
+
+\end{document}
